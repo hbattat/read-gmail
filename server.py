@@ -11,16 +11,6 @@ SECRET = 'YOUR API SECRET TO PREVENT OTHERS FROM MAKING REQUESTS'
 GMAIL_ADDRESS = 'your@gmail.com'
 G_APP_PASS = 'YOUR GOOGLE APP PASSWORD'
 
-imap_obj = GmailImap.GmailIMAP4_SSL()
-imap_obj.login(GMAIL_ADDRESS, G_APP_PASS)
-
-# Provide app info to Google, and get some back in return (RFC2971)
-imap_obj.id('name', 'Sam Battat', 'contact', 'sam@battat.us')
-
-# RFC3501
-# get the message count from e.g. ('OK', ['3'])
-folders = imap_obj.special_folders()
-
 
 def enable_cors(fn):
     def _enable_cors(*args, **kwargs):
@@ -35,6 +25,15 @@ def enable_cors(fn):
 @route('/read/<thread_id_dec>')
 @enable_cors
 def read(thread_id_dec):
+    imap_obj = GmailImap.GmailIMAP4_SSL()
+    imap_obj.login(GMAIL_ADDRESS, G_APP_PASS)
+
+    # Provide app info to Google, and get some back in return (RFC2971)
+    imap_obj.id('name', 'Sam Battat', 'contact', 'sam@battat.us')
+
+    # RFC3501
+    # get the message count from e.g. ('OK', ['3'])
+    folders = imap_obj.special_folders()
     logging.debug('Received a request with thread_id_dec ' + thread_id_dec)
     if request.query.secret == SECRET:
         logging.debug('Secret is correct')
@@ -64,6 +63,7 @@ def mark_as_read(thread_id_dec):
                 logging.debug('THRID matches thread_id_dec')
                 logging.debug('Marked as read ' + str(index) + '(' + thread_id_dec + ')')
                 imap_obj.mark_as_read(index)
+                imap_obj.logout()
                 break
     except Exception as e:
         logging.error('There was an exception')
